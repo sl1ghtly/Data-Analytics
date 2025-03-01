@@ -1,4 +1,4 @@
-# TeamProject
+# Data Analytics
 Semester 6 - Data Analytics
 
 # Contents
