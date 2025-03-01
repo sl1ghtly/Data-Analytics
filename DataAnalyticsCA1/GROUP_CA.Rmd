@@ -1,0 +1,26 @@
+---
+title: "The Data Demons Group CA"
+author: "Daniel, Eryk & Calvin"
+date: "02/03/2023"
+output: html_document
+---
+
+```{r create and set directory}
+getwd()
+list.files()
+```
+
+```{r install and import libraries}
+# install.packages("NHANES")
+library(NHANES)
+# install.packages("NHANES")
+# library(NHANES)
+```
+
+
+```{r start working from here}
+library(NHANES)
+data(NHANES)
+NHANES
+```
+
