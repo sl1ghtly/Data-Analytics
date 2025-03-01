@@ -1,0 +1,364 @@
+---
+title: "Data Analytics Practical 2"
+author: "Eryk Gloginski"
+date: "16/02/2023"
+output: html_document
+---
+
+```{r create and set directory}
+getwd()
+dir.create("I:/Year 3/Semester 6/Data Analytics/Practicals/Practical2")
+setwd("I:/Year 3/Semester 6/Data Analytics/Practicals/Practical2")
+getwd()
+list.files()
+```
+
+
+```{r exercise 1. 1-14 }
+data() # lists all of the datasets built into R
+
+mtcars #views all data
+
+ncol(mtcars) #tells us the number of columns in the dataset ‘mtcars’
+
+nrow(mtcars) # tells us the number of rows
+
+dim(mtcars) # tells us number of rows and columns
+
+str(mtcars) # gives structure of mtcars
+
+summary(mtcars) #gives us some descriptive stats on each variable
+
+summary(mtcars$am) # gives descriptive stats on a specific variable (am in this case)
+```
+
+# 3. The first dataset we’ll look at is the one called “mtcars”. What description is given for this dataset?
+# Motor Trend Car Road Tests.
+
+# 6. Guess the command for the number of rows?
+# nrow()
+
+# 7. Find a more elegant command for the number of rows and columns?
+# dim(mtcars)
+
+# 8. How many rows and how many columns are in the mtcars dataset? What very important sample characteristic do we obtain from the number of rows?
+# 32 rows, 11 columns. Amount of data.
+
+# 9. This is a useful command: ?mtcars
+# What does it do? and where does the output appear?
+# Opens Help about Motor Trend Car Road Tests in the bottom right.
+
+# 11. Next we’ll check on the type of data contained in each variable:
+# str(mtcars) #gives us the structure of ‘mtcars’
+# What type of data does R tell us we have in each of the variables?
+# Does this mean that all of the data are “continuous data”?
+# R tells us that there is num in those variables.
+# Not all data is continuous
+
+# 14. For which of the variables are these particular descriptive stats not useful? Why?
+# I don't understand the point of this question.
+
+```{r exercise 1. 15-22}
+table(mtcars$mpg) # table for all
+table(mtcars$cyl)
+table(mtcars$disp)
+table(mtcars$drat)
+table(mtcars$wt)
+table(mtcars$qsec)
+table(mtcars$vs)
+table(mtcars$am)
+table(mtcars$gear)
+table(mtcars$carb)
+
+hist(mtcars$mpg) # histogram for all
+hist(mtcars$cyl)
+hist(mtcars$disp)
+hist(mtcars$drat)
+hist(mtcars$wt)
+hist(mtcars$qsec)
+hist(mtcars$vs)
+hist(mtcars$am)
+hist(mtcars$gear)
+hist(mtcars$carb)
+
+boxplot(mtcars) # do a boxplot
+
+boxplot(mtcars$mpg) # boxplot for all
+boxplot(mtcars$cyl)
+boxplot(mtcars$disp)
+boxplot(mtcars$drat)
+boxplot(mtcars$wt)
+boxplot(mtcars$qsec)
+boxplot(mtcars$vs)
+boxplot(mtcars$am)
+boxplot(mtcars$gear)
+boxplot(mtcars$carb)
+
+dotchart(mtcars$am) # dot plots for all
+dotchart(mtcars$mpg)
+dotchart(mtcars$cyl)
+dotchart(mtcars$disp)
+dotchart(mtcars$drat)
+dotchart(mtcars$wt)
+dotchart(mtcars$qsec)
+dotchart(mtcars$vs)
+dotchart(mtcars$gear)
+dotchart(mtcars$carb)
+```
+
+# 15. Try the command given below: table(mtcars$am)
+# What is it doing? Why is this useful for some of the variables in mtcars?
+# Use this command to appropriately describe all of the relevant variables in mtcars.
+# It counts results and puts them under a column, example 19 0s or 13 1s.
+
+# 19. In our lectures, we mentioned that Boxplots are excellent ways of performing initial observations on the spread of the data. Try the following: boxplot(mtcars)
+# Is this particular command useful?
+# Yes it is. It makes a box-and-whisker plots of grouped values.
+
+# 20. Make a more useful command and create better box plots for each of the relevant variables in mtcars. Hint: ?boxplots
+# Is there evidence for outliers in any of the variables? If so which one(s) and how many outliers can you identify? What do boxplots help us to see that Histograms don’t? Conversely, what do Histograms help us to see that boxplots don’t?
+
+```{r exercise 1. 23-24}
+boxplot(mpg ~ cyl, data = mtcars, xlab = "Number of Cylinders", ylab = "Miles Per Gallon", main = "Mileage Data")
+
+boxplot(mpg ~ am, data = mtcars, xlab = "Mpg", ylab = "Transition", main = "Mileage Data")
+
+boxplot(hp ~ am, data = mtcars, xlab = "Gross Horsepower", ylab = "Transmission", main = "Mileage Data")
+
+boxplot(disp ~ gear, data = mtcars, xlab = "Displacement", ylab = "Number of forward gears", main = "Mileage Data")
+
+boxplot(hp ~ vs, data = mtcars, xlab = "Gross Horsepower", ylab = "Engine", main = "Mileage Data")
+
+boxplot(mpg ~ carb, data = mtcars, xlab = "Number of Cylinders", ylab = "Carberetors", main = "Mileage Data")
+
+```
+
+# 23. We might want to visualise the spread of a variable according to values of another variable. Try the code below:
+# boxplot(mpg ~ cyl, data = mtcars, xlab = "Number of Cylinders", ylab = "Miles Per Gallon", main = "Mileage Data")
+# Describe in simple terms what is being shown in this plot.
+# Mileage Data, Miles per Gallon, Number of Cylinders
+
+# 24. Now create a boxplot visual to show each of the following relationships:
+# a. Mpg by Transmission
+# b. Gross horsepower by Transmission
+# c. Displacement by Number of Forward Gears
+# d. Gross horsepower by Engine
+# e. Mpg by Number of Carburettors
+# Do you see any interesting relationships in these data? If so, describe at least 2 ofthem?
+
+```{r exercise 1. 25}
+
+qqnorm(mtcars$mpg, main = "QQ Plot of mpg", frame = TRUE)
+qqline(mtcars$mpg, col = "red", lwd = 2)
+
+qqnorm(mtcars$cyl, main = "QQ Plot of cyl", frame = TRUE)
+qqline(mtcars$cyl, col = "red", lwd = 2)
+
+qqnorm(mtcars$disp, main = "QQ Plot of disp", frame = TRUE)
+qqline(mtcars$disp, col = "red", lwd = 2)
+
+qqnorm(mtcars$drat, main = "QQ Plot of drat", frame = TRUE)
+qqline(mtcars$drat, col = "red", lwd = 2)
+
+qqnorm(mtcars$wt, main = "QQ Plot of wt", frame = TRUE)
+qqline(mtcars$wt, col = "red", lwd = 2)
+
+qqnorm(mtcars$qsec, main = "QQ Plot of qsec", frame = TRUE)
+qqline(mtcars$qsec, col = "red", lwd = 2)
+
+qqnorm(mtcars$vs, main = "QQ Plot of vs", frame = TRUE)
+qqline(mtcars$vs, col = "red", lwd = 2)
+
+qqnorm(mtcars$am, main = "QQ Plot of am", frame = TRUE)
+qqline(mtcars$am, col = "red", lwd = 2)
+
+qqnorm(mtcars$gear, main = "QQ Plot of gear", frame = TRUE)
+qqline(mtcars$gear, col = "red", lwd = 2)
+
+qqnorm(mtcars$carb, main = "QQ Plot of carb", frame = TRUE)
+qqline(mtcars$carb, col = "red", lwd = 2)
+
+```
+# 25. Note that we still don’t know that much about the distribution of the variables. 
+# Create QQ Plots for the other relevant variables in mtcars.
+
+
+```{r exercise 2 1}
+#install.packages("ggplot2") #installs a package, in this case- ggplot2.
+#install.packages("gridExtra")
+library("ggplot2") #loads an installed package
+library("gridExtra")
+```
+
+```{r exercise 2 2-4}
+library(ggplot2)
+library(gridExtra)
+
+box1<- ggplot(mtcars, aes(x="", y=mpg))+
+ geom_boxplot()+
+ xlab("Miles per gallon")+
+ ylab("Mpg")
+hist1<-ggplot(mtcars, aes(x=mpg))+
+ geom_histogram(binwidth=5, fill="white", color="black")+
+ xlab("MPG")
+grid.arrange(hist1, box1, ncol=2)
+
+box2<- ggplot(mtcars, aes(x="", y=cyl))+
+ geom_boxplot()+
+ xlab("Number of Cylinders")+
+ ylab("cyl")
+hist2<-ggplot(mtcars, aes(x=cyl))+
+ geom_histogram(binwidth=5, fill="white", color="black")+
+ xlab("CYL")
+grid.arrange(hist2, box2, ncol=2)
+
+box3<- ggplot(mtcars, aes(x="", y=disp))+
+ geom_boxplot()+
+ xlab("Displacement")+
+ ylab("disp")
+hist3<-ggplot(mtcars, aes(x=disp))+
+ geom_histogram(binwidth=5, fill="white", color="black")+
+ xlab("DISP")
+grid.arrange(hist3, box3, ncol=2)
+
+box4<- ggplot(mtcars, aes(x="", y=drat))+
+ geom_boxplot()+
+ xlab("Rear Axle Ratio")+
+ ylab("drat")
+hist4<-ggplot(mtcars, aes(x=drat))+
+ geom_histogram(binwidth=5, fill="white", color="black")+
+ xlab("DRAT")
+grid.arrange(hist4, box4, ncol=2)
+
+box5<- ggplot(mtcars, aes(x="", y=wt))+
+ geom_boxplot()+
+ xlab("Weight (1000 lbs)")+
+ ylab("wt")
+hist5<-ggplot(mtcars, aes(x=wt))+
+ geom_histogram(binwidth=5, fill="white", color="black")+
+ xlab("WT")
+grid.arrange(hist5, box5, ncol=2)
+
+box6<- ggplot(mtcars, aes(x="", y=qsec))+
+ geom_boxplot()+
+ xlab("1/4 mile time")+
+ ylab("qsec")
+hist6<-ggplot(mtcars, aes(x=qsec))+
+ geom_histogram(binwidth=5, fill="white", color="black")+
+ xlab("QSEC")
+grid.arrange(hist6, box6, ncol=2)
+
+box7<- ggplot(mtcars, aes(x="", y=vs))+
+ geom_boxplot()+
+ xlab("Engine")+
+ ylab("vs")
+hist7<-ggplot(mtcars, aes(x=vs))+
+ geom_histogram(binwidth=5, fill="white", color="black")+
+ xlab("VS")
+grid.arrange(hist7, box7, ncol=2)
+
+box8<- ggplot(mtcars, aes(x="", y=am))+
+ geom_boxplot()+
+ xlab("Transmission")+
+ ylab("am")
+hist8<-ggplot(mtcars, aes(x=am))+
+ geom_histogram(binwidth=5, fill="white", color="black")+
+ xlab("AM")
+grid.arrange(hist8, box8, ncol=2)
+
+box9<- ggplot(mtcars, aes(x="", y=gear))+
+ geom_boxplot()+
+ xlab("Number of Gears")+
+ ylab("gear")
+hist9<-ggplot(mtcars, aes(x=gear))+
+ geom_histogram(binwidth=5, fill="white", color="black")+
+ xlab("GEAR")
+grid.arrange(hist9, box9, ncol=2)
+
+box10<- ggplot(mtcars, aes(x="", y=carb))+
+ geom_boxplot()+
+ xlab("Carburetors")+
+ ylab("carb")
+hist10<-ggplot(mtcars, aes(x=carb))+
+ geom_histogram(binwidth=5, fill="white", color="black")+
+ xlab("CARB")
+grid.arrange(hist10, box10, ncol=2)
+
+box11<- ggplot(mtcars, aes(x="", y=hp))+
+ geom_boxplot()+
+ xlab("Horse Power")+
+ ylab("hp")
+hist11<-ggplot(mtcars, aes(x=hp))+
+ geom_histogram(binwidth=5, fill="white", color="black")+
+ xlab("HP")
+grid.arrange(hist11, box11, ncol=2)
+
+summary(mtcars$disp) #we did this previously
+```
+
+# 4. What do you notice about the binwidth for some of the histograms? Do you need to change it for some of the variables?
+# The binwidth is sometimes too big or too small for the plots
+
+```{r exercise 2 5 - 6}
+library("ggplot2")
+scat1<- ggplot(mtcars, aes(x=mpg, y=disp))+
+ geom_point()+
+ xlab("MPG")+
+ ylab("Displacement")
+scat1
+
+scat2<- ggplot(mtcars, aes(x=hp, y=vs))+
+ geom_point()+
+ xlab("Horse Power")+
+ ylab("Ebgube")
+scat2
+
+scat3<- ggplot(mtcars, aes(x=mpg, y=carb))+
+ geom_point()+
+ xlab("MPG")+
+ ylab("Carberetors")
+scat3
+
+```
+
+# 5. We will often want to observe a relationship between two variables: scatterplots. The code below from the ggplot2 allows us to do create a scatterplot:
+# What does the scatterplot suggest about the relationship between miles per gallon and displacement?
+# the more displacecment the less miles per gallon
+
+# 6. Create two more scatterplots from mtcars and comment on the relationships between the two variables that you have chosen to observe in each scatterplot. Remember to use the grid.arrange function to organise the plots.
+# when engine is 1, less horsepower and vice versa
+# more carberetors, less miles per gallon
+
+```{r exercise 3 1}
+# These packages will need to be installed
+#install.packages("httr")
+#install.packages("jsonlite")
+# Require (load) the packages
+library(httr)
+library(jsonlite)
+```
+
+```{r exercise 3 2}
+library(httr)
+library(jsonlite)
+# To obtain access, we need the API key
+api_key <- "f0063370"
+# Specify the title of which movie to search for (replace spaces with +)
+movie <- "The+Banshees+of+Inisherin"
+# Create a web path
+path <- paste("http://www.omdbapi.com/?t=",movie,"&apikey=",api_key,sep="")
+# Access HTTP data using GET command
+call <- GET(url=path)
+# To see if a HTTP request is successful, check the reply status code (successful code is 200)
+status_code(call)
+
+# To view the content of the call, the number of characters is truncated here for display only.
+str(content(call), nchar.max=40) # remove ``nchar.max'' for all info
+# Data are currently in JSON format, needs to be converted to text
+text_call <- content(call,as="text",encoding="UTF-8")
+df <- fromJSON(text_call,flatten=T)
+head(df) # the first few items are shown for display only, run ``df'' for all info.
+```
+
+# I was unable to search up another movie because the API key was not being accepted even though I got my own one via email.
+

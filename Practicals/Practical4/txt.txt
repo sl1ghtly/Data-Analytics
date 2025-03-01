@@ -1,0 +1,13 @@
+#Test the following six hypotheses, making sure to evaluate all test assumptions for each chosen test statistic.
+
+#1.The proportion of shared rooms is the same in Dublin and Copengaghen.
+
+#2.There is no difference in price according to room type in London.
+
+#3.The number of reviews do not differ according to room type in Dublin.
+
+#4.Overall satisfaction ratings do not differ between Dublin and Amsterdam. 
+
+#5.Overall price does not differ between Copehnagen, Dublin, Amsterdam, and Barcelona.
+
+#6.Overall satisfaction ratings do not differ between Paris, Warsaw, Amsterdam, and Iceland.

@@ -1,0 +1,440 @@
+---
+title: "Data Analytics Practical 4 ~Airbnb basic business analytics"
+author: "Eryk Gloginski"
+date: "09/03/2023"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r package installations}
+# install.packages("tidyverse")
+# install.packages("gridExtra") #this package helps to organise figure output from ggplot
+library(tidyverse)
+library(gridExtra)
+```
+
+#make sure to save your ".RData" file (Airbnb.RData) in your current working directory. 
+
+```{r set dir and list files in directory}
+getwd()
+setwd("D:/Year 3/Semester 6/Data Analytics/Practicals/Practical4")
+getwd()
+list.files()  
+```
+
+```{r load the airbnb data file}
+airbnb <- load("airbnb.RData")
+airbnb
+```
+#Read through the meta data .pdf file provided on Blackboard. 
+
+#You will see that there mutiple datasets within this .RData object. Each 'city' dataset has a set of variables which are described in the metadata pdf file. These data were scraped from the Airbnb wesite for the given cities. They are now nicely structured for us to use (this is this result of a lot of data wrangling!!)
+
+#We will start by studying variables in the Paris and Copenhagen datasets.
+
+```{r observe the variables in paris and copehagen datasets- use this command to see the variables in each}
+ls(paris)
+ls(copenhagen)
+```
+
+#We will work with the following variables: 1."room_type";  2."reviews";  3."overall_satisfaction" and then later; 4."price" in each dataset. Note that the datasets contain many similar variables.
+
+
+#Exercise 1. Data explorations: visualising & summarising & sample sizing. 
+#The goal here is to understand the 'type' or 'format' of the data in these 3 variables (1."room_type2;  2."reviews";  3."overall_satisfaction").
+
+#Part a.
+```{r obtain descriptive or summary data on variables 1,2, and 3 from the Paris data}
+count(paris) #quick assessment of sample size, no. of observations 
+
+summary(paris$room_type) #generates useful descriptive data
+summary(paris$reviews)
+summary(paris$overall_satisfaction)
+
+sd(paris$reviews) #generates a standard deviation as the summary functions doesn't do this!
+sd(paris$overall_satisfaction)
+```
+
+
+```{r obtain descriptive or summary data on variables 1,2, and 3 from the copenhagen data}
+count(copenhagen)       
+
+summary(copenhagen$room_type)
+summary(copenhagen$reviews)
+summary(copenhagen$overall_satisfaction)
+
+sd(copenhagen$reviews)
+sd(copenhagen$overall_satisfaction)
+```
+
+#Review these summary (descriptive) statistics and start thinking about the type of data in each variable (regardless of whether it is from Paris or from Copenhagen). Note the differences in sample size between the cities.
+
+#We now want to ask: "what 'type' of data is in each of the 3 variables?", i.e., is it continuous, categorical,or discrete data? We will now do visualisations (plots) to help answer this question (of course the information in the metadata will also help us).
+
+#Part b
+
+```{r box plots of room type variable}
+
+paris_typebox <- ggplot(paris, aes(x="", y=room_type)) + 
+  geom_boxplot(outlier.colour="red", outlier.shape=1,
+                outlier.size=2) +
+ylab("Room Type") +
+  xlab("Paris")
+
+copenhagen_typebox <- ggplot(copenhagen, aes(x="", room_type)) + 
+  geom_boxplot(outlier.colour="blue", outlier.shape=1,
+                outlier.size=2) +
+ylab("Room Type") +
+  xlab("Copenhagen")
+
+grid.arrange(paris_typebox , copenhagen_typebox , ncol=2)
+
+```
+
+
+```{r box plots of reviews variable}
+
+paris_revbox <- ggplot(paris, aes(x="", y=reviews)) + 
+  geom_boxplot(outlier.colour="red", outlier.shape=1,
+                outlier.size=2) +
+ylab("Number of Reviews") +
+  xlab("Paris")
+
+copenhagen_revbox <- ggplot(copenhagen, aes(x="", y=reviews)) + 
+  geom_boxplot(outlier.colour="blue", outlier.shape=1,
+                outlier.size=2) +
+ylab("Number of Reviews") +
+  xlab("Copenhagen")
+
+grid.arrange(paris_revbox , copenhagen_revbox , ncol=2)
+
+```
+
+
+```{r box plots of overall satisfaction variable}
+
+paris_satbox <- ggplot(paris, aes(x="", y=overall_satisfaction)) + 
+  geom_boxplot(outlier.colour="red", outlier.shape=1,
+                outlier.size=2) +
+ylab("Overall Satisfaction Rating") +
+  xlab("Paris")
+
+copenhagen_satbox <- ggplot(copenhagen, aes(x="", y=overall_satisfaction)) + 
+  geom_boxplot(outlier.colour="blue", outlier.shape=1,
+                outlier.size=2) +
+ylab("Overall Satisfaction Rating") +
+  xlab("Copenhagen")
+
+grid.arrange(paris_satbox , copenhagen_satbox , ncol=2)
+
+```
+
+
+#Question: Are the boxplots useful in exploring these data?
+
+#Answer: They are helpful at this stage to enable us to determine the 'type' of data we are dealing with in each variable:
+
+#1.Clearly the data in 'room_type' are not continuous (can also be seen from our summary report also), in fact the data shown in the boxplot are consistent with these data being categorical (i.e. counts in 3 differnet categories of rooms). The boxplots do not help us to summrise these data.
+
+#2.The boxplot of the data in 'reviews' is okay, clearly there are lots of outliers in both cities that impact the plot- it is very hard to see the 'box' that shows the interquartile range (Q3-Q1) and its also not particularly easy to see the median. In this case the data could be continuous but we have to go back to the description of this variable in the Pr4_Meta_data.pdf file to think more about this- the metadata description tell us that this variable is "the number of reviews that a listing has reveived". This then is consistent with the data being discrete data (numerical but not continuous, e.g. it's not possible to have 1.42 reviews, a room gets either 1 or 2 or 3 or 4 or x reviews). Therefore, the boxplot is also of limited use in summarisng these data.
+
+#3.The boxplot of 'overall_satisfaction' is somewhat useful. We can clearly see the medians (both 4.5) and very large interquartile ranges (large boxes, 4.5 and 5), the boxplot also shows us that we are dealing with data in the range of 0 to 5 (suggesting discrete data). The information in Pr4_Meta_data.pdf for this variable tells us that teh data are 'the average rating out of 5 that a listing ahs received': again suggesting this these data are discrete but we cannot be sure. We need a better way to visualise these data.  
+
+
+#part c. We now construct more appropriate plots:
+
+```{r Bar charts are used for visualising categorical data, no. of obs in each category- room-type data are categorical }
+
+Parisbar <- ggplot(paris, aes(x=as.factor(room_type) )) +
+  geom_bar(color="black", fill=rgb(0.8,0.2,0.1,0.7) )+
+  xlab("Paris room types")
+
+Copenbar <- ggplot(copenhagen, aes(x=as.factor(room_type) )) +
+  geom_bar(color="black", fill=rgb(0.3,0.6,0.9,0.7) )+
+  xlab("Copenhagen room types") 
+
+
+grid.arrange(Parisbar, Copenbar, ncol=2)
+```
+
+```{r count the count function is very useful for categorical data like room type}
+paris %>% 
+  count(room_type)
+copenhagen %>% 
+  count(room_type)
+```
+
+
+```{r dot plots can be used for discrete data visualisations, and we can try to use then for the reviews variable}
+#note we have to provide a 'y' variable to show the points by- here we use room_id.
+Parisdot<- ggplot(paris) + 
+      geom_point(aes(x= reviews, y= room_id)) +
+        xlab("No. of Reviews Paris")
+
+Copendot<- ggplot(copenhagen) + 
+      geom_point(aes(x= reviews, y= room_id)) +
+        xlab("No. of Reviews Copenhagen")
+
+grid.arrange(Parisdot, Copendot, ncol=2)
+```
+
+#with room ID as the 'y' is not so easy to visualize the reviews data (Danger!! Falling Rocks!!), so we can the variable 'neighborhood' instead.
+
+```{r second dot plot for the reviews variable using a different y variable}
+
+Parisdot<- ggplot(paris) + 
+      geom_point(aes(x= reviews, y= neighborhood)) +
+        xlab("No. of Reviews Paris")
+
+Copendot<- ggplot(copenhagen) + 
+      geom_point(aes(x= reviews, y= neighborhood)) +
+        xlab("No. of Reviews Copenhagen")
+
+grid.arrange(Parisdot, Copendot, ncol=2)
+```
+
+#the visual produced here is not what we would call 'publication quality' but it lets us see better that the 'reviews' data are likley to be discrete. How do we confirm: we need to look at the data (or at lest part of it) directly: see next code chunk
+
+```{r view the data entered in reviews variable in the Paris and Copenhagen datasets, remove hash to run code}
+#paris$reviews
+#copenhagen$reviews
+# reviews is the number of reviews that a listing has received (70% of stays leave a review apparently)
+```
+
+#we can confirm that the data here are discrete. This variable takes on distinct countable values.
+
+```{r dot plots for the overall satisfaction data Paris&Chagen}
+Parisdot2<- ggplot(paris) + 
+      geom_point(aes(x= reviews, y= overall_satisfaction)) +
+        xlab("No. of ratings Paris")
+
+Copendot2<- ggplot(copenhagen) + 
+      geom_point(aes(x= reviews, y= overall_satisfaction)) +
+        xlab("No. of ratings Copenhagen")
+
+grid.arrange(Parisdot2, Copendot2, ncol=2)
+```
+#these dotpolts show that 'overall_satisfaction' data are discrete taking values of 0, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, and 5.0 only.
+
+
+##.....................................................................................................................................
+
+
+#EXERCISE 2.
+
+#In this exercise you will perform inferential statistics on the Paris and Copenhagen Airbnb data.
+#We are interested in comparing the prices of rooms between Paris and Copenhagen.
+#We will conduct a formal hypothesis test around the question of whether the price of a night stay differed between Paris and Copenhagen in 2017.
+
+#Part(a) Explore the data
+```{r summarise price data in each city}
+
+summary(paris$price)
+summary(copenhagen$price)
+sd(paris$price)
+sd(copenhagen$price)
+
+
+paris %>% 
+  count(price)
+copenhagen %>% 
+  count(price)
+```
+
+#We need to know what type of data price is.
+
+```{r look at the data in the variables directly, note remove hash to run code}
+#paris$price 
+#copenhagen$price
+# price is $US for a night to stay(possible values where it's price per month such as for where the price might be over 750)
+```
+#The data have no decimal places and appear to be rounded the nearest 1 dollar. Based on this observation alone, are the data likely to be discrete or continuous? Just think about the answer for now , no need to type or to note an answer. 
+
+#Next we plot the data uisng boxplots and histograms.
+
+```{r boxplots for price}
+#box plots
+pariscostbox <- ggplot(paris, aes(x="", y=price)) + 
+  geom_boxplot(outlier.colour="red", outlier.shape=1,
+                outlier.size=2) +
+ylab("Price for a one night stay in USD")+
+  xlab("Paris")
+
+copenhagencostbox <- ggplot(copenhagen, aes(x="", y=price)) + 
+  geom_boxplot(outlier.colour="blue", outlier.shape=1,
+                outlier.size=2) +
+ylab("Price for a one night stay in USD")+
+  xlab("Copenhagen")
+
+grid.arrange(pariscostbox , copenhagencostbox , ncol=2)
+```
+
+#based on the boxplots we can say that there are a lot of outliers in the data from both cities.
+#In fact the spread of the data is such that we cannot glean much information from the boxplot.
+
+#Next we can assess the data using histograms- i.e. look at the data distribution within each histogram 
+
+```{r price data histograms}
+ParisrevHist <- ggplot(paris, aes (x=price)) + 
+      geom_histogram(binwidth=80, fill="grey", color="red") +
+        xlab("No. of Reviews Paris")
+
+CopenrevHist <- ggplot(copenhagen, aes (x=price)) + 
+      geom_histogram(binwidth=60, fill="grey", color="blue") +
+        xlab("No. of Reviews Copenhagen")
+
+grid.arrange(ParisrevHist, CopenrevHist, ncol=2)
+```
+#From the histograms we can see the distribution and spead of the data more clearly.
+#It is obvious that the majority of the vaues lie at the left side of the price data distribution (dollar values approx. less than $500)
+#But there are samll numbers of values far to the right (large dollar values) that cause teh distributiosn to have very long right tails.
+#When we observe this characteristic of a data distribution, it is known as a 'right skew' (or 'data are skewed to the right').
+#Obviously we cannot say that these data have a classic bell shaped or "normal distribution" (also known as a Gaussian normal distribution).
+
+
+#We will now create simple plots that help us direclty assess whether the distribution is Gaussian Normal or not.
+
+```{r normal distribution assessments with Normal Quantile Quantile or Normal QQ Plots }
+PNorm<- qqnorm(paris$reviews, main = "Paris Reviews Normal Q-Q plot")
+qqline(paris$reviews, col="red")
+CNorm<- qqnorm(copenhagen$reviews, main = "Copenhagen Reviews Normal Q-Q plot")
+qqline(copenhagen$reviews, col="blue")
+```
+
+#Now look-up what a normally distributed variable should look like on a QQ Plot. 
+#See: https://data.library.virginia.edu/understanding-q-q-plots/
+#Also see: https://www.r-bloggers.com/2021/06/qq-plots-in-r-quantile-quantile-plots-quick-start-guide/
+
+
+#Part(b) T-test for hypothesis testing
+
+#Now we will formally test a hypothesis base don our quetsion of interest, i.e., "was there a differnece in the price of an Airbnb night stay between Paris and Copenhagen in 2017?". Note we are not interested in 'room type' yet, so this comparison is for all rooms.
+
+#To write this formally in terms of a null & an alternative hypothesis we can write:
+
+#Null Hypothesis, Ho: The population mean price for a one night Airbnb stay in Paris (2017) is equal to the popualtion mean for a one night Airbnb stay in Copenhagen (2017).
+
+#Alternative Hypothesis, H1: The population mean price for a one night Airbnb stay in Paris (2017) is not equal to the popualtion mean for a one night Airbnb stay in Copenhagen (2017).
+
+#To perform this, we will want to do a two-samples t-test using the price data in our Paris and Copenhagen samples (from July 2017).
+
+#But, we have a problem with doing this!
+
+#Below are listed some key assumptions ythat ahve to be true about the data before using a 2 sample t-test.
+#1~The data in each variable are normally distributed (in the population).
+#2~The distribution of the variable of interest is the same in both populations.
+#3~All observations in each distribution are independent of each other (the value of one ob. does not influence that of another).
+
+#Here we already know that assumption 1 is violated. Our data are not consistent with a normal distribution.
+#In this case, we have skewed data, and it is common practice to transform skewed data before undertkaing statistical tests in which the data should follow a normal distribution. A natural log transformation is commonly used on skewed data. 
+
+
+```{r log transforms the price data and create a new variable called logprice}
+paris$logprice=log(paris$price)
+copenhagen$logprice=log(copenhagen$price)
+summary(paris$logprice)
+summary(copenhagen$logprice)
+```
+
+
+```{r histograms and qq plots for log price data}
+logParisHist <- ggplot(paris, aes (x=logprice)) + 
+      geom_histogram(binwidth=0.2, fill="grey", color="red") +
+        xlab("Log Price in Paris in USD")
+
+
+logCopenHist <- ggplot(copenhagen, aes (x=logprice)) + 
+      geom_histogram(binwidth=0.2, fill="grey", color="blue") +
+        xlab("Log Price in Copenhagen in USD")
+
+PNorm<- qqnorm(paris$logprice, main = "Paris Log Price Normal Q-Q plot")
+qqline(paris$logprice, col="red")
+CNorm<- qqnorm(copenhagen$logprice, main = "Copenhagen Log Price Normal Q-Q plot")
+qqline(copenhagen$logprice, col="blue")
+
+grid.arrange(logParisHist, logCopenHist, ncol=2)
+```
+
+#While the data still ahve a slkight right skew, the distributions are now much closer to normal.
+
+#We can now proceed with the t-test using the log transformed data...Although we should also check the other 2 assumptions!- we'll ignore these for now and come back to them later!.
+
+
+```{r t-test on log transformed price data}
+ttest <- t.test(paris$logprice, copenhagen$logprice, var.equal = FALSE)
+ttest
+```
+
+#The t-test output is given after running this code.
+#We can see that the t-value for the test is shown, which is -35.895.
+#The p-value for this t-value is given as 2.2x10-16, which is very low (much lower than 0.05).
+#Therefore, our p-value for the calculated t-value is p<0.05.
+#Based on this result, we can reject the null hypothesis in favor of the alternative hypothesis.
+#Hence, we can conclude that the population mean price for a one night Airbnb stay in Paris was not equal to the popualtion mean for a one night Airbnb stay in Copenhagen in 2017.
+#Note that a 95% confidence interval for the differnece between the means is also given. *more on this later. 
+
+
+#..................................................................................
+#..................................................................................
+
+
+#Exercise 3.
+
+#In this exercise you will perform inferential statistics on the DUBLIN and LONDON Airbnb data.
+#Again, we are interested in comparing the prices of rooms between DUBLIN and LONDON.
+#Conduct a formal hypothesis test around the question of whether the price of a night stay differed between Dublin and London in 2017.
+#Use all of the code steps (code chunks) that are necessary from Exercise 2 above.
+#Remember to state your hypotheses (null and alternative) clearly.
+
+```{r observe the variables in dublin and london datasets}
+ls(dublin)
+ls(london)
+
+# box plot for price per night of dublin
+dublincostbox <- ggplot(paris, aes(x="", y=price)) + 
+  geom_boxplot(outlier.colour="red", outlier.shape=1,
+                outlier.size=2) +
+ylab("Price for a one night stay in USD")+
+  xlab("Dublin")
+
+# box plot for price per night of london
+londoncostbox <- ggplot(london, aes(x="", y=price)) + 
+  geom_boxplot(outlier.colour="blue", outlier.shape=1,
+                outlier.size=2) +
+ylab("Price for a one night stay in USD")+
+  xlab("London")
+
+# arrange the grids so they are displayed together
+grid.arrange(dublincostbox , londoncostbox , ncol=2)
+
+# get the logprice by using log(city$price) and summarise it in the r console
+dublin$logprice=log(dublin$price)
+london$logprice=log(london$price)
+summary(dublin$logprice)
+summary(london$logprice)
+
+# create a logprice dublin histogram for price in usd
+logDublinHist <- ggplot(dublin, aes (x=logprice)) + 
+      geom_histogram(binwidth=0.2, fill="grey", color="red") +
+        xlab("Log Price in Dublin in USD")
+
+# create a logprice london histogram for price in usd
+logLondonHist <- ggplot(london, aes (x=logprice)) + 
+      geom_histogram(binwidth=0.2, fill="grey", color="blue") +
+        xlab("Log Price in London in USD")
+
+# qq plot for the dublin log price
+DNorm<- qqnorm(dublin$logprice, main = "Dublin Log Price Normal Q-Q plot")
+qqline(dublin$logprice, col="red")
+# qq plot for the london log price
+LNorm<- qqnorm(london$logprice, main = "London Log Price Normal Q-Q plot")
+qqline(london$logprice, col="blue")
+
+# arrange the histograms so they are displayed together
+grid.arrange(logDublinHist, logLondonHist, ncol=2)
+```
+
+# Null Hypothesis, Ho: The population mean price for a one night Airbnb stay in Dublin (2017) is equal to the popualtion mean for a one night Airbnb stay in London (2017).
+
+# Alternative Hypothesis, H1: The population mean price for a one night Airbnb stay in Dublin (2017) is not equal to the popualtion mean for a one night Airbnb stay in London (2017).

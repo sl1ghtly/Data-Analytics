@@ -1,0 +1,519 @@
+---
+title: "Data Analytics Practicals 7 & 8 ~NHANES health data analytics"
+author: "Eryk Gloginski"
+date: "21/04/2023"
+---
+
+#In this practical (7,8 combined) you will work with real world health data from one of the world's largest repositories of human health data. The National Health and Nutrition Examination Study (NHANES) is a decades-long epidemiological study of the health of the US population run by the CDC. Every two-years (an NHANES cycle:  https://wwwn.cdc.gov/nchs/nhanes/Default.aspx, starting in 1999) thousands of participants are recruited and studied across multiple indicators of health and wellbeing using blood sampling, established medical techniques, questionnaires, etc. It is arguably the world's richest resource of publicly available health data. Thousands of researchers from all over the world will mine, analyse, and make useful discoveries on these data these data every year...see the research paper (attached in Bb) published this month in the prestigious medical journal 'JAMA' that used NHANES data with analysis performed exclusively using R packages.
+
+#The NHANES data are well structured although they do require a degree of wrangling but are CLEAN (data hygeine already done).
+
+#You will be provided with some introductory code to get you going and then you will be required to perform complete sets of analyses together with visualisations & assumption checks using code from the previous practicals. Each analysis will be set as a seperate exercise. There are a total of 3 exercises.
+
+#Practicals 7 and 8 are designed to be a bit more challenging than the previous practicals and will require more self-direction. You will be required to integrate learnings from previous practicals to complete these exercises along with figuring out some data wrangling steps to complete the analyses. *All of the analyses/statistical tests required for hypothesis testing have been used previously.
+
+```{r package installations note install.packages code is silenced with a hash, remove hash to install}
+#install.packages("tidyverse")
+#install.packages("gridExtra") #this package helps to organize figure output from ggplot
+#install.packages("nhanesA") #this package enables data files to be directly retreived & imported from the NHANES website and converted into R data tables.
+
+library(nhanesA)
+library(tidyverse)
+library(gridExtra)
+```
+
+
+```{r set dir and list files in directory}
+getwd()
+#setwd("D:/Year 3/Semester 6/Data Analytics/Practicals/Practical7and8")
+#getwd()
+list.files()  
+```
+
+#Getting started with continuous NHANES and exploring using the nhanesA package.
+
+#Exercise 1 (code is mostly provided).
+
+#Here we'll explore continuous NHANES data and look at basic body measurements along with blood pressure data. NHANES keeps its data in data files known as TABLES which are distributed across 5 different data_groups: DEMO (demographic as well as unique ID data) EXAM (examination data), LAB (laboratory analysis from blood samples), DIET (dietary data from questionnaires), Q (general health, disease and related questionnaire data). 
+
+#We'll work with NHANES data from the 2017-2018 cycle. Note data tables from his cycle are named "xxx_J".
+
+#For this analysis, we are interested in data from the EXAMINATION data group for the 2017-2018 cycle.
+
+```{r shows names of the data tables within each group}
+nhanesTables('EXAM', 2017)
+nhanesTables('DEMO', 2017)
+```
+
+#The variables of interest for analytsis are contained in these data tables.
+#To find out what variables are in each table and to get details on the specific variables, you have to acsess the metadata provided on the NHANES website- and look at the .DOC files. Yiu can diretcly access this using the command below:
+
+```{r view metadata on the EXAMINATION variables}
+browseNHANES(2017, 'EXAM')
+```
+
+```{r view metadata on the Demographics variables}
+browseNHANES(2017, 'DEMO') 
+```
+
+#note that the variable SEQN is common to both. 
+#This is the 'Respondent Sequence Number' or unique identifier for subjects in the dataset. It is included in all data tables and can be used as the common feature to merge the data tables.
+
+#Now we'll import both the body measures and demographics data tables into R.
+
+```{r import 2017 data on body measures and demographics using nhanesA package}
+BMX_J  <- nhanes('BMX_J')
+DEMO_J <- nhanes('DEMO_J')
+head (BMX_J)
+head (DEMO_J)
+dim (BMX_J)
+dim (DEMO_J)
+```
+
+#The variables we are most interested in are height, weight, body mass index, and waist circumfernece (from BMX_J) and age and gender from DEMO. From our meta data, we can identify these variables as: BMXHT,BMXWT,BMXBMI,BMXWAIST,RIDAGEYR,RIAGENDR.
+
+```{r use summary to get a quick idea about the data}
+summary(BMX_J$BMXHT)
+summary(BMX_J$BMXWT)
+summary(BMX_J$BMXBMI)
+summary(BMX_J$BMXWAIST)
+
+summary(DEMO_J$RIDAGEYR)
+summary(DEMO_J$RIAGENDR)
+```
+
+
+```{r plot the continuous data using boxplots }
+Heightbox <- ggplot(BMX_J, aes(x="", y=BMXHT)) + 
+  geom_boxplot(outlier.colour="purple", outlier.shape=1,
+                outlier.size=2) +
+ylab("Height in cm")+
+  xlab("2017-2018 Cycle")
+
+Weightbox <- ggplot(BMX_J, aes(x="", y=BMXWT)) + 
+  geom_boxplot(outlier.colour="red", outlier.shape=1,
+                outlier.size=2) +
+ylab("Weight in kg")+
+  xlab("2017-2018 Cycle")
+
+BMIbox <- ggplot(BMX_J, aes(x="", y=BMXBMI)) + 
+  geom_boxplot(outlier.colour="cyan", outlier.shape=1,
+                outlier.size=2) +
+ylab("BMI kg/m2")+
+  xlab("2017-2018 Cycle")
+
+Waistbox <- ggplot(BMX_J, aes(x="", y=BMXWAIST)) + 
+  geom_boxplot(outlier.colour="green", outlier.shape=1,
+                outlier.size=2) +
+ylab("Waist circ in cm")+
+  xlab("2017-2018 Cycle")
+
+Agebox <- ggplot(DEMO_J, aes(x="", y=RIDAGEYR)) + 
+  geom_boxplot(outlier.colour="green", outlier.shape=1,
+                outlier.size=2) +
+ylab("Age in Yrs")+
+  xlab("2017-2018 Cycle")
+
+Heightbox
+Weightbox
+BMIbox
+Waistbox
+Agebox
+```
+
+
+#There are clearly outliers in the data.
+
+#QUESTION: Can we speculate anything about the subjects in the dataset based on some of these outliers?
+# #ANSWER: 
+# In the heightbox, some people are are not tall so we can assume that they are either children or people suffering from dwarfism(rare case).
+# In the weight box there are people who have a very unhealthy weight and we can assume that they are morbidly obese.
+# In the bmi box, there are people with a very high body mass index, therefore we can assume the same thing, there are some people who are morbidly obese.
+# In the waist box, there are people with large waist sizes, therefore it relates to the previous one with them being morbidly obese.
+# In the age box, there isn't any outliers as it just shows the ages of people that the data was sampled from, from above the age of 10 to under the age of 60
+
+#to perfrom soem basic analyses, we need to merge these two data tables.
+
+```{r now merge the two data tables together and check merger}
+MergedData2017 <- merge(DEMO_J, BMX_J, all=TRUE)
+dim(MergedData2017)
+head(MergedData2017)
+```
+
+#1. Test hypothesis 1: The BMI of adult males and adult females is different. H0: Male BMI = Female BMI.
+
+
+```{r how is gender coded}
+nhanesTranslate('DEMO_J', 'RIAGENDR')
+```
+#we see that males are coded as 1 and females as 2.
+
+
+```{r evalaute the BMI distribution for normality}
+BMIHist <- ggplot(MergedData2017, aes (x=BMXBMI)) + 
+      geom_histogram(binwidth=0.25, fill="grey", color="blue") +
+        xlab("BMI in NHANES 2017-2018")
+
+BMIHist
+
+BMINorm<- qqnorm(MergedData2017$BMXBMI, main = "BMI Normal Q-Q plot")
+qqline(MergedData2017$BMXBMI, col="magenta")
+```
+
+#The data distribution does not look good, so we can try a log transformation of BMI.
+
+```{r log transform}
+MergedData2017$logBMXBMI=log(MergedData2017$BMXBMI)
+```
+
+
+```{r evalaute the logBMI distribution for normality}
+BMIHist2 <- ggplot(MergedData2017, aes (x=logBMXBMI)) + 
+      geom_histogram(binwidth=0.05, fill="white", color="blue") +
+        xlab("log BMI in NHANES 2017-2018")
+
+BMIHist2
+
+BMINorm2<- qqnorm(MergedData2017$logBMXBMI, main = "log BMI Normal Q-Q plot")
+qqline(MergedData2017$logBMXBMI, col="pink")
+```
+
+#The log transformed data clearly conform better to a normal distribution but there is still a problematic left skew in the data.
+#Do you notice anything odd about the histogram- hint: "a brace of peaks".
+#What is the cause of this left skew?
+##ANSWER: This is an example of a bimodal distribution- two peaks- one around 3.35 and the other at 2.8-  there are actually two different BMI population distributions in the data.
+##One distibution is the adult BMI distribution, the other is the fact that we have children in the sample, therefore the left skew relates to this fact. This will not always be the case but can often occur when we have a mixed sample of adults and children, or healthy vs diseased, or even sometimes, male vs female.
+#The fix here is easy, we should remove  the chidlren from the data analysis as we are more interested only in adults. Here we will use age of 19yrs or greater to deffine an adult.
+
+```{r  create a new adult only dataset with children removed}
+MergedData2017A <- subset(MergedData2017, RIDAGEYR >= 19)
+dim(MergedData2017A)
+head(MergedData2017A)
+```
+
+```{r redo the norm checks}
+BMIHist3 <- ggplot(MergedData2017A, aes (x=logBMXBMI)) + 
+      geom_histogram(binwidth=0.05, fill="white", color="blue") +
+        xlab("log BMI in NHANES 2017-2018")
+
+BMIHist3
+
+BMINorm3<- qqnorm(MergedData2017A$logBMXBMI, main = "log BMI Normal Q-Q plot")
+qqline(MergedData2017A$logBMXBMI, col="pink")
+```
+#The data look much better now, although there are clearly some very high BMI values (this is US data!)
+#We can now use a parametric statistic to test our null hypothesis (i.e. mean adult male and female BMIs are equal).
+#In this case we can use a t-test.
+
+```{r remember to check the variances to determine whether a Welch t-tets is needed}
+res.ftest <- var.test(logBMXBMI ~ RIAGENDR, data = MergedData2017A)
+res.ftest
+```
+
+```{r 2 sample t test with unequal variances required base don F test above}
+t.test (logBMXBMI ~ RIAGENDR, var.equal=FALSE, data = MergedData2017A)
+```
+
+#Based on a p-value of 0.00099, we can reject the null and conclude that there is a difference in BMI between adult males and females.
+
+#QUESTION: Do you think this difference is meaningful (what is the mean difference in original BMI units)?
+# ANSWER: 
+# I do believe that the difference is meaningful due to the fact that biologically men tend to be either more muscular or and taller that women.
+# The difference in BMI units is: 3.354643 - 3.375676 = -0.021033
+
+
+#2. Test hypothesis 2: There is a linear relationship between waist circumference and BMI. Ho: No linear relationship between BMI and waist.
+
+```{r distribution plots of waist}
+WaistHist <- ggplot(MergedData2017A, aes (x=BMXWAIST)) + 
+      geom_histogram(binwidth=0.25, fill="grey", color="blue") +
+        xlab("WAIST in NHANES 2017-2018")
+
+WaistHist
+
+WaisttNorm<- qqnorm(MergedData2017A$BMXWAIST, main = "Waist Normal Q-Q plot")
+qqline(MergedData2017A$BMXWAIST, col="magenta")
+```
+
+#the data show some evidence for deviation form normal, so a log transformation may help.
+
+```{r log waist data}
+MergedData2017A$logBMXWAIST=log(MergedData2017A$BMXWAIST)
+
+logWaistHist <- ggplot(MergedData2017A, aes (x=logBMXWAIST)) + 
+      geom_histogram(binwidth=0.05, fill="grey", color="blue") +
+        xlab("Log WAIST in NHANES 2017-2018")
+
+logWaistHist
+
+logWaisttNorm<- qqnorm(MergedData2017A$logBMXWAIST, main = "Log Waist Normal Q-Q plot")
+qqline(MergedData2017A$logBMXWAIST, col="magenta")
+
+```
+
+```{r look at scatter plot of logwaist and logBMI}
+scatter_plot <- ggplot(MergedData2017A, aes(x = logBMXWAIST, y = logBMXBMI)) +
+    geom_point() +
+   geom_smooth(method = "lm", se = FALSE) +  
+    xlab("Log Waist Circum") +
+  ylab("Log BMI")
+scatter_plot
+```
+
+
+```{r perform a simple ls linear regression to test hypothesis}
+BMI_waist_MODEL <- lm(formula= logBMXBMI ~ logBMXWAIST, data=MergedData2017A)
+summary(BMI_waist_MODEL)
+```
+#there is a strong linear relationship (P<0.0001) with a high R2 value of 0.83.
+
+#Now we need to do some diagnostics on the regression residuals to check that no linear regression assumptions were violated.
+ 
+```{r plot of residuals from the regression model above- BMI_waist_model}
+par(mfrow=c(2,2))
+plot(BMI_waist_MODEL)
+par(mfrow=c(1,1))
+```
+# 1. Residuals vs. Fitted: this tells us that the mean of the errors is zero across all fitted values, indeed the output above gave us the median of the residuals(errors) as -0.00440- very clode to zero). Therefore this key assumption (assumption 1 from lecture 13) is not violated.
+
+# 2. The Normal Q-Q plot shows us that the residuals largely conform to a normal distribution: errors are normally distributed. 
+
+# 3. The scale location plot tells us the scale of variability of errors is constant over all values. 
+
+# 4. The Residuals vs leverage plot shows a metric known as Cook's distance: this helps highlight any overly influential data points tmay not be valid(like outliers) and can also be used to to indicate regions of the data distributions in which more data swould be beneficial.The plot shows data well within the Cook's distance but does suggest a limited density of data at the upper end of the data space, i.e. at the higher values of both variables- this means we should exert some caution on use of the model for making predictions at the higher values of waist circumference.
+
+# 5. We can asssume that the explanatory/predictor variables in this case were collected without error as NHANES methods are very well established. 
+
+
+##In summary, we have a strong model and it is clear that there is a strong linear relationship between BMI and waist in adults.
+
+#****************************************************************************************************************
+#****************************************************************************************************************
+
+
+
+#Exercise 2.
+
+#There are typically 5 categories of body mass index (BMI) used in adults. 
+# 1. Underweight: BMI<18.50
+# 2. Normal weight: BMI 18.50-24.99
+# 3. Overweight: BMI 25.00-29.99
+# 4. Obesity (obese): BMI 30.00-39.99
+# 5. Severe Obesity: BMI = 40.0 or greater.
+
+#Using data from NHANES 2015-2016, test the following 5 hypotheses (making sure to perform data hygeine steps up front):
+
+# 1. There is no age difference among normal weight, overweight, and obese adults.
+# 2. The proportion of male and female adults who are severely obese is the same.
+# 3. The proportion of males in the overweight, obesity, and  severe obesity categories is the same.
+# 4. There is a linear relationship between Systolic Blood Pressure and BMI in adults (BMI is a predictor of systolic blood pressure).
+# 5. Total cholesterol concentrations do not differ among normal weight, overweight,and obese (obesity) adults.
+
+```{r Exercise 2.0 starting}
+# Explore NHANES
+nhanesTables('EXAM', 2015)
+nhanesTables('DEMO', 2015)
+#browseNHANES(2015, 'EXAM')
+#browseNHANES(2015, 'DEMO')
+
+# Get Data
+BMX_I  <- nhanes('BMX_I')
+DEMO_I <- nhanes('DEMO_I')
+
+# Check Data
+head(BMX_I)
+head(DEMO_I)
+dim(BMX_I)
+dim(DEMO_I)
+
+
+# Merge Data
+MERGED_DATA <- merge(DEMO_I, BMX_I, all=TRUE)
+dim(MERGED_DATA)
+head(MERGED_DATA)
+```
+
+```{r Exercise 2.1 age difference }
+# Make histogram using ggplot and BMXBMI
+BMI_HISTOGRAM_1 <- ggplot(MERGED_DATA, aes (x=BMXBMI)) + 
+  geom_histogram(binwidth=0.25, fill="grey", color="blue") +
+  xlab("BMI NHANES 2015/16")
+
+# Display Histogram
+BMI_HISTOGRAM_1
+
+# Normal probablity plot
+BMI_NORM_QQ_1 <- qqnorm(MERGED_DATA$BMXBMI, main = "BMI Normal Q-Q plot")
+qqline(MERGED_DATA$BMXBMI, col="blue")
+
+MERGED_DATA$logBMXBMI=log(MERGED_DATA$BMXBMI)
+
+# T test
+t.test (logBMXBMI ~ RIAGENDR, var.equal=FALSE, data = MERGED_DATA)
+```
+
+```{r Exercise 2.2 severe obesity}
+#2
+# Filtered by severe obesity
+MERGED_DATA_SEVERE_OBESITY <- subset(MERGED_DATA, BMXBMI >= 40)
+dim(MERGED_DATA_SEVERE_OBESITY)
+head(MERGED_DATA_SEVERE_OBESITY)
+
+# Histogram for severe obesity using BMXBMI
+BMI_HISTOGRAM_2 <- ggplot(MERGED_DATA_SEVERE_OBESITY, aes (x=BMXBMI)) + 
+  geom_histogram(binwidth=0.25, fill="grey", color="red") +
+  xlab("BMI above 40 in NHANES 2015/16")
+
+BMI_HISTOGRAM_2
+
+# Normal probablity plot
+BMI_NORM_QQ_2 <- qqnorm(MERGED_DATA_SEVERE_OBESITY$BMXBMI, main = "BMI Normal Q-Q plot")
+qqline(MERGED_DATA_SEVERE_OBESITY$BMXBMI, col="red")
+
+```
+
+```{r Exercise 2.3 genders}
+# filtered by gender
+MERGED_DATA_GENDER <- table(MERGED_DATA$BMXBMI, MERGED_DATA$RIAGENDR)
+MERGED_DATA_GENDER
+
+#chi squared test of independence
+chisq.test(MERGED_DATA_GENDER)
+```
+
+```{r Exercise 2.4 blood pressure}
+# omit not available
+MERGED_DATA_BP <- na.omit(MERGED_DATA[,c("BMXBMI", "BMXSAD1")])
+
+# make a ggplot based on BMXBMI and BMXSAD1
+ggplot(MERGED_DATA_BP, aes(x=BMXBMI, y=BMXSAD1)) +
+  geom_point() +
+  xlab("BMI") +
+  ylab("Systolic BP") +
+  ggtitle("Scatter plot for BMI and Systolic BP")
+
+# make a linear model
+BP_LINEAR_MODEL <- lm(BMXSAD1 ~ BMXBMI, data = MERGED_DATA_BP)
+summary(BP_LINEAR_MODEL)
+```
+
+
+```{r Exercise 2.5 cholesterol concentrations}
+MERGED_DATA_CHOLESTEROL <- subset(MERGED_DATA, BMXBMI >= 18.5 & BMXBMI < 25 | BMXBMI >= 25 & BMXBMI < 30 | BMXBMI >= 30)
+
+fit <- lm(BMDBMIC ~ BMXBMI, data = MERGED_DATA_CHOLESTEROL)
+anova(fit)
+```
+
+#****************************************************************************************************************
+#****************************************************************************************************************
+
+
+
+
+#Exercise 3.
+
+#Blood insulin concentrations are an excellent indicator of metabolic health. They are particularly useful for predicting risk of type 2 diabetes in adults. However, insulin is expensive and time consuming to measure. Predicting insulin based on other more easily measured health variables would be of considerable utility in healthcare. Your task is to build a model for predicitng insulin uisng NHANES data.
+
+# 1. Build a multiple linear regression model to predict Insulin (LBDINSI) levels in adults using data from the 2015-2016 NHANES cycle.
+# 2. Consider using some or all of the following as predictor variables: BMI, age, gender, waist circumference, DEXA body fat percentage (EXAM), triglyceride (LAB), glucose (LAB).
+# 3. You may use any of the other variables avaialble in NHANES 2015-2016 you think can improve the model's prediction power.
+# 3. Choose the best model and justify its choice (2-3 sentences).
+# 4. Be sure to check linear regression assumptions on all of the finalised models.
+
+
+#****************************************************************************************************************
+#****************************************************************************************************************
+
+```{r Exercise 3.0 starting}
+# Browse Available Data
+nhanesTables('EXAM', 2015)
+nhanesTables('LAB', 2015)
+
+# Get Data
+BMX_I <- nhanes('BMX_I')
+DEMO_I <- nhanes('DEMO_I')
+INS_I <- nhanes('INS_I')
+DXX_I <- nhanes('DXX_I')
+TRIGLY_I <- nhanes('TRIGLY_I')
+GLU_I <- nhanes('GLU_I')
+BPX_I <- nhanes('BPX_I')
+PAQ_I <- nhanes('PAQ_I')
+
+# Merge Data
+NEW_MERGED_DATA1 <- merge(DEMO_I, BMX_I, all = TRUE)
+NEW_MERGED_DATA1 <- merge(NEW_MERGED_DATA1, INS_I, all = TRUE)
+NEW_MERGED_DATA1 <- merge(NEW_MERGED_DATA1, DXX_I, all = TRUE)
+NEW_MERGED_DATA1 <- merge(NEW_MERGED_DATA1, TRIGLY_I, all = TRUE)
+NEW_MERGED_DATA1 <- merge(NEW_MERGED_DATA1, GLU_I, all = TRUE)
+head(NEW_MERGED_DATA1)
+dim(NEW_MERGED_DATA1)
+```
+
+```{r Exercise 3.1}
+# Make Model
+FIRST_MODEL <- lm(LBDINSI ~ BMXBMI + RIDAGEYR + RIAGENDR + BMXWAIST + LBXTR + LBXGLU + DXDTOFAT, data = NEW_MERGED_DATA1)
+
+# Clean Data
+NEW_MERGED_DATA1 <- na.omit(NEW_MERGED_DATA1)
+
+# Display Model
+summary(FIRST_MODEL)
+plot(FIRST_MODEL)
+```
+
+
+```{r Exercise 3.2 }
+# Merge Data Again
+NEW_MERGED_DATA2 <- merge(DEMO_I, BMX_I, all = TRUE)
+NEW_MERGED_DATA2 <- merge(NEW_MERGED_DATA2, INS_I, all = TRUE)
+NEW_MERGED_DATA2 <- merge(NEW_MERGED_DATA2, DXX_I, all = TRUE)
+NEW_MERGED_DATA2 <- merge(NEW_MERGED_DATA2, TRIGLY_I, all = TRUE)
+NEW_MERGED_DATA2 <- merge(NEW_MERGED_DATA2, GLU_I, all = TRUE)
+head(NEW_MERGED_DATA2)
+dim(NEW_MERGED_DATA2)
+
+# Make Model
+SECOND_MODEL <- lm(LBDINSI ~ BMXBMI + RIDAGEYR + RIAGENDR + BMXWAIST + LBXTR + LBXGLU + DXDTOFAT, data = NEW_MERGED_DATA2)
+
+# Clean Data
+NEW_MERGED_DATA2 <- na.omit(NEW_MERGED_DATA2)
+
+# Display Model
+summary(SECOND_MODEL)
+plot(SECOND_MODEL)
+```
+
+```{r Exercise 3.3.1}
+# Merge Data Again
+NEW_MERGED_DATA3 <- merge(DEMO_I, BMX_I, all = TRUE)
+NEW_MERGED_DATA3 <- merge(NEW_MERGED_DATA3, INS_I, all = TRUE)
+NEW_MERGED_DATA3 <- merge(NEW_MERGED_DATA3, DXX_I, all = TRUE)
+NEW_MERGED_DATA3 <- merge(NEW_MERGED_DATA3, TRIGLY_I, all = TRUE)
+NEW_MERGED_DATA3 <- merge(NEW_MERGED_DATA3, GLU_I, all = TRUE)
+NEW_MERGED_DATA3 <- merge(NEW_MERGED_DATA3, BPX_I, all = TRUE)
+NEW_MERGED_DATA3 <- merge(NEW_MERGED_DATA3, PAQ_I, all = TRUE)
+head(NEW_MERGED_DATA3)
+dim(NEW_MERGED_DATA3)
+
+# Fill Model
+THIRD_MODEL <- lm(LBDINSI ~ BMXBMI + RIDAGEYR + RIAGENDR + BMXWAIST + LBXTR + LBXGLU + DXDTOFAT + BPXDI3 + BPXSY3 , data = NEW_MERGED_DATA3)
+
+# Clean Data
+NEW_MERGED_DATA3 <- na.omit(NEW_MERGED_DATA3)
+
+# Display Model
+summary(THIRD_MODEL)
+plot(THIRD_MODEL)
+```
+
+```{r Exercise 3.3.2}
+# Summarize
+summary(SECOND_MODEL)
+summary(THIRD_MODEL)
+```
+
+# After comparing all the models, FIRST_MODEL and SECOND_MODEL seem to be the same.
+# However, After comparing SECOND_MODEL and THIRD_MODEL, I have concluded that SECOND_MODEL is the superior regression model.
+# This is due to the fact that it SECOND_MODEL posesses a higher Multiple R-Squared and Adjusted R-Squared value when compared to THIRD_MODEL.
+# Therefore, I recommend using SECOND_MODEL for regression analysis.

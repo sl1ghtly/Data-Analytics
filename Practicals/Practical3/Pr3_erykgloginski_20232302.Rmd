@@ -1,0 +1,249 @@
+---
+title: "Data Analytics Practical 3"
+author: "Eryk Gloginski"
+date: "23/02/2023"
+output: html_document
+---
+
+```{r create and set directory}
+getwd()
+dir.create("D:/Year 3/Semester 6/Data Analytics/Practicals/Practical3")
+setwd("D:/Year 3/Semester 6/Data Analytics/Practicals/Practical3")
+getwd()
+list.files()
+```
+# Create and set Directory
+
+```{r install tidyverse}
+# install.packages("tidyverse")
+library(tidyverse)
+
+```
+# Install and load tidyverse
+
+```{r demo of a forward pipe}
+# create a simple function for the equation: x3+3
+f<- function(x)
+  x^3+3
+
+# Then we can apply f to an argument x using
+x <- 5
+f(x)
+
+# The forward-pipes from magrittr allow us to rewrite this function call as
+# install.packages("magrittr")
+library(magrittr)
+x %>% f
+```
+# Demo of a forward pipe where you have to install magrittr package
+
+```{r Pipelines 2-5}
+library(tidyverse)
+library(magrittr)
+# mtcars2 <- transform(mtcars, lp100k=235.21/mpg) subset(mtcars2, lp100k<=10)
+
+subset(transform(mtcars, lp100k=235.21/mpg), lp100k<=10)
+
+mtcars %>% transform(lp100k=235.21/mpg) %>% subset(lp100k<=10)
+
+```
+# Pipelines continued 2 to 5. Also transforming mtcars was not working into mtcars2 without the pipeline.
+
+```{r Exercise 1 A & B}
+library(tidyverse)
+library(magrittr)
+
+# Convert it to nested function calls. 
+rnorm(1000) %>% sin() %>% max() 
+# Converted Code:
+max(sin(rnorm(1000)))
+
+library(MASS) #Load package MASS, which contains the data
+# Convert the R code below to pipelines.
+subset(transform(mammals, ratio=brain/body), ratio==max(ratio))
+# Converted Code:
+mammals %>% transform(ratio=brain/body) %>% subset(ratio==max(ratio))
+```
+# Exercise 1. A and B, code from no pipelines to with pipelines.
+
+```{r Pipelines 6-9}
+library(tidyverse)
+library(magrittr)
+# Part 9
+mtcars2 <- mtcars %>% transform(lp100k=235.21/mpg) %>% subset(lp100k<=10)
+cor(mtcars2$disp, mtcars2$hp)
+
+# Part 10
+mtcars %>% transform(lp100k=235.21/mpg) %>% subset(lp100k<=10) %$% cor(disp, hp)
+
+```
+# Using Pipeline with additional operator.
+
+```{r Tibbles 10-19}
+library(tidyverse)
+library(magrittr)
+# starwars
+starwars[,c("name", "starships")] #Print only these columns
+starwars[10,"starships"][[1]] #prints starships flown by Obi-Wan
+
+```
+# Tibles 11 - 19.
+
+```{r Creating Tibbles 20-27}
+# Part 21
+library(tidyverse)
+library(magrittr)
+kids <- rbind(c( 4, 15, 101),
+c(11, 28, 132))
+colnames(kids) <- c("age", "weight", "height")
+rownames(kids) <- c("Sarah", "John")
+kids <- as.data.frame(kids)
+kids <- cbind(kids, gender=c("f","m"))
+kids
+
+# Part 22
+kidstibble <- as_tibble(kids)
+kidstibble
+
+# Part 24
+kidstibble$name <- rownames(kids) # Create a column with names
+# Next we re-arrange columns so that names comes first
+kidstibble <- kidstibble[,c("name", "age", "weight", "height", "gender")]
+kidstibble
+
+# Part 25
+kidstibble2 <- rownames_to_column(kids)
+kidstibble2 
+
+# Part 26
+kidsdf <- as.data.frame(kidstibble)
+kidsdf
+```
+# Creating Tibles 20-27
+
+```{r Using readr 28-31}
+library(tidyverse)
+library(magrittr)
+read_csv("chol.csv", na=".")
+```
+# Using Readr 28-31
+
+```{r Exercise 2}
+library(tidyverse)
+library(magrittr)
+read_csv("cars.csv", na=".")
+read_delim("ships.txt", na=".")
+
+```
+# Exercise 2 where we read 2 data files cars.csv and ships.txt using read_csv() and read_delim(). The na="." basically changes all . to not available.
+
+```{r Using dplyr 32-45}
+library(tidyverse)
+library(magrittr)
+
+# Part 37
+load("velib.RData")
+
+# Part 40
+stationsparis <- stations %>% filter(departement=="Paris")
+stationsparis
+
+# Part 42
+stations7592 <- stations %>% filter(departement=="Paris" | departement=="Hauts-de-Seine")
+stations7592
+
+# Part 43
+stations7593 <- stations %>% filter(departement %in% c("Paris" , "Hauts-de-Seine"))
+stations7593
+
+# Part 44
+stations7594 <- filter(stations, departement %in% c("Paris" , "Hauts-de-Seine"))
+stations7594
+
+# Part 45
+stations %>% slice(5:7)
+```
+# Using dplyr 32-45
+
+```{r Exercise 3}
+library(tidyverse)
+library(magrittr)
+bikes
+
+bikes7592 <- bikes %>% filter(available_bikes
+>60 & time>15)
+bikes7592
+```
+# Exercise 3 where I find stations that have more than 60 bikes available at 3 pm(time value 15). Had to figure out that bikes is a seperate data set.
+
+```{r Using mutate 46-50}
+library(tidyverse)
+library(magrittr)
+
+# Part 47
+bikes <- bikes %>% mutate(total_stands = available_bikes+available_bike_stands)
+bikes
+```
+# Using mutate 46-50
+
+```{r Using arrange 51-53}
+library(tidyverse)
+library(magrittr)
+
+# Part 52
+bikes %>% arrange(available_bikes)
+
+# Part 53
+bikes %>% arrange(desc(available_bikes))
+```
+# Using Arrange 51-53
+
+```{r Exercise 4}
+library(tidyverse)
+library(magrittr)
+stations
+
+stations %>% arrange(lng) %>% slice(1:3)
+```
+# Exercise 3 where we identify 3 bike stations that are the furthest to the West(smallest longtitude)
+
+```{r Using group_by and summarise 54-55}
+library(tidyverse)
+library(magrittr)
+bikes %>% group_by(name) %>% #Group by station name
+summarise(avg_stands=mean(available_bike_stands)) %>% #averages
+arrange(desc(avg_stands)) #Sort in descending order
+```
+# Using group_by and summarise 54-55
+
+```{r Exercise 5}
+library(tidyverse)
+library(magrittr)
+
+bikes
+bikes %>% group_by(name) %>% summarise(n = n())
+```
+# Unable to finish this as I don't understand this
+
+```{r Using join-type functions 56-60}
+library(tidyverse)
+library(magrittr)
+
+bikes %>% inner_join(stations) # Merge data (using common variable: name)
+```
+# Using join-type functions 56-60
+
+```{r Exercise 6}
+library(tidyverse)
+library(magrittr)
+
+# Part A
+load("patients_weights.Rdata")
+patientweights <- weights %>% inner_join(patients)
+patientweights
+
+# Part B
+patientweights %>% group_by(Gender) %>% summarise(avg_weight=mean(Weight))
+
+```
+# Exercise 6 where we merge data and get the average weight of female and male patients

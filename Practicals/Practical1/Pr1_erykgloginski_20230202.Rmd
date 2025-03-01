@@ -1,0 +1,48 @@
+---
+title: "Data Analytics Practical 1"
+author: "Eryk Gloginski"
+date: "02/02/2023"
+output: html_document
+---
+
+```{r set directory}
+getwd() #identify current working directory
+dir.create("I:/Year 3/Semester 6/Data Analytics/Practicals") #create new directory
+setwd("I:/Year 3/Semester 6/Data Analytics/Practicals") #set new directory to current working directory
+getwd() #confirm current working directory
+list.files() #list files in current working directory
+```
+
+```{r exercise 2.1}
+2/ (3*2)   #answer is 0.3333333
+(2/3) *2   #answer is 1.333333
+3+4/5      #answer is 3.8
+(3+4)/5    #answer is 1.4
+27^1/3     #answer is 9
+```
+
+```{r exercise 2.2.1}
+l <- 9000 #loan is 9000
+n <- 20   #loan term is 20 years
+v <- 0.05 #interest rate
+p <- l*(1-v)/(v-v*(n+1)) #annual repayment
+p         #answer is -8550
+```
+
+```{r exercise 2.2.2}
+repayment <- function(term, loan, interest.rate) {
+  therate <- 1 / (1 + interest.rate)
+  payment <- loan * (1-therate) / (therate * (1-therate^term))
+  return(payment)
+}
+repayment(20, 9000, 0.05)  #answer is 722.1833
+repayment(20, 9000, 0.075) #answer is 882.8297
+repayment(20, 9000, 0.1)   #answer is 1057.137
+repayment(20, 10000, 0.15) #answer is 1597.615
+repayment(20, 15000, 0.15) #answer is 2396.422
+repayment(20, 20000, 0.15) #answer is 3195.229
+repayment(15, 9000, 0.15)  #answer is 1539.153
+repayment(25, 9000, 0.15)  #answer is 1392.295
+repayment(30, 9000, 0.15)  #answer is 1370.702
+```
+

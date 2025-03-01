@@ -1,0 +1,637 @@
+---
+title: "Data Analytics Practicals 5 & 6 ~Airbnb many more useful tests & linear regression models"
+author: "Eryk Gloginski"
+date: "16/03/2023"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r package installations-- note install.packages code is silenced with a hash, remove hash to install}
+#install.packages("tidyverse")
+#install.packages("gridExtra") #this package helps to organise figure output from ggplot
+library(tidyverse)
+library(gridExtra)
+```
+
+#make sure to save your ".RData" file (Airbnb.RData) in your current working directory. 
+
+```{r set dir and list files in directory}
+getwd()
+#setwd("I:/Year 3/Semester 6/Data Analytics/Practicals/Practical5and6")
+getwd()
+list.files()  
+```
+
+```{r load the airbnb data file and check vars in paris and Chagen}
+airbnb <- load("airbnb.RData")
+airbnb
+
+ls(paris)
+ls(copenhagen)
+```
+
+#run the code chunks below and complete all of the short exercises. The entire notebook should be submitted at the end of week 9.
+
+# t-test assumptions
+
+#First we re-run the t-test that we undertook last week in order to discuss some of the assumptions underlying it.
+
+```{r t-test on log transformed price data that we ran last week}
+paris$logprice=log(paris$price)
+copenhagen$logprice=log(copenhagen$price)
+
+ttest <- t.test(paris$logprice, copenhagen$logprice, var.equal = FALSE)
+ttest
+```
+
+#Below are listed some key assumptions ythat ahve to be true about the data before using a 2 sample t-test.
+
+#1~The data in each variable are normally distributed (in the population).
+
+#2~The distribution (spread) of the variable of interest is the same in both populations.
+
+#3~All observations in each distribution are independent of each other (the value of one ob. does not influence that of another)
+
+#NOTE: we assessed only the first of these assumptions for this t-test, i.e. the normal distribution of variables.
+
+#It is important also to test the second assumption- the spread of tghe variable sis the same, to do this, we perform a comaprison of the variances using another test called the F-test (also used in ANOVA) before performing the t-test. Here our null hypothesis (Ho) is that there is no differnece in the variances of the two data distributions- the test statitic is a ratio of the two variances, if they are the same the ratio should be equal to one accouting for degress of freedom (essentially the sample sizes that we have).
+
+```{r equality of variances F test}
+#check for equality of variances (F test to determine if their ratio is equal to 1) of the two price variables)
+
+res.ftest <- var.test(paris$logprice, copenhagen$logprice)
+res.ftest
+```
+
+
+#Here we see that the result of the F-test suggests that we reject the null with a p<2.2e-16 (rato of variances is not requal to zero).
+
+#Therefore the variances are not the same in the two popualtions based on our samples.
+
+#with a 2-sample t-test we account for this..you may have noticed the code: "var.equal = FALSE". If the variances were the same this would read "var.equal = FALSE". 
+
+#The specific type of 2-sample T-test in which the variances of the two samples are not equal is known as a Welch Two Sample t-test.
+
+#You can raed out it here and constrast it with the standrd 2-sample t-test when variances are equal.
+
+
+```{r comapring results from a std t-test and Welch t-test}
+
+ttest_falsev <- t.test(paris$logprice, copenhagen$logprice, var.equal = FALSE)
+ttest_falsev
+
+ttest_truev <- t.test(paris$logprice, copenhagen$logprice, var.equal = TRUE)
+ttest_truev
+```
+#note the differences (t-value and df) in the results of the standard 2-sample t-test and the Welch t-test.
+
+#Here the t-value (difference) is so large that it does not imapct the p-value, but with smaller sample sizes, unequal varinaces will impact the results and its important to always perform a F-tets to assess varinaces before performing a 2-sample t-test.
+
+
+#Now one more important assumption remains.
+
+#~That is 3. All observations in each distribution are independent of each other (the value of one ob. does not influence that of another). 
+
+#This is usually only an issue for repeated measures data (e.g. before and after data on the same individual) where the value of an observation in the first sample directly influences the value of an obervation in the second sample.
+
+#In these cases we use a paired t-test if we have 2 sample or groups, we use a repeated measures ANOVA if we have more than 2 groups.
+
+#.............................................................................................................
+#.............................................................................................................
+
+
+# Non-parametric tests
+
+#t-tests are useful for continuous data but what if we have other types of data?
+
+#when conventional tests (t-test, ANOVA, pearson r) that are predicated on normal distributions of data in the popualtions being compared do not hold then the data can be analysed using a group of statistics called non-parametric tests.
+
+#we will use several of these tests on the airbnb data.
+#......................................................................................................................................
+#.....................................................................................................................................
+
+#First, one common and very general question we might have about data relates to differences in the proportions (or percentages) of individuals in a given category, i.e. categorical data.
+
+#We may have a question about whether the proportion(or percentage) of private rooms differs between Paris and Copenhagen.
+
+#To test a hypothesis about 2 proprtions we use the 2 proportions test also called a 2 proportions Z-test.
+
+```{r two proportions tests for room type data}
+
+summary(paris$room_type)
+summary(copenhagen$room_type)
+
+prop.test(x = c(7880, 3564), n = c(70158,21301), alternative = "two.sided", correct = TRUE)
+```
+#x is a vector of counts of successes or specific category counts, n is a vector of count trials or total observations.
+
+#the resulsts of the test lead us to reject the null hypothesis and say that there is indeed a difference in the proportion of private rooms available in Paris and Chagen. Note: the Pearson’s chi-squared test statistic is used here.
+
+
+## Exerise 1. Now test the hypothesis that the proportion of private rooms Airbnb differs between Dublin and London.
+```{r Exercise 1, perform this for dublin and london, that is a two proportions tests for prop. of private rooms}
+summary(dublin$room_type)
+summary(london$room_type)
+
+# two proportions tests for room type data for dublin and london
+prop.test(x = c(3733, 30399), n = c(7929,64144), alternative = "two.sided", correct = FALSE)
+```
+
+
+#Testing for differneces in variables that contain discrete data.
+
+#Lets take a look again at the overall satisfaction ratings in Paris and Chagen.
+
+```{r ggplot code for scatter plots of overall satisfaction vs number of reviews}
+scatter_Paris <- ggplot(paris, aes(x = overall_satisfaction, y = reviews)) +
+    geom_point() +
+   xlab("Overall Satisfaction Ratings in Paris")
+
+scatter_Chagen <- ggplot(copenhagen, aes(x = overall_satisfaction, y = reviews)) +
+    geom_point() +
+  xlab("Overall Satisfaction Ratings in Coopenhagen")
+
+grid.arrange(scatter_Paris, scatter_Chagen, ncol=2)
+
+summary(paris$overall_satisfaction)
+summary(copenhagen$overall_satisfaction)
+```
+
+
+#These are discrete data that take on values of 0,0.5,1.0,1.5,2.0,2.5,3.0,3.5,4.0,4.5,5.0 ONLY.
+
+#If we want to compare these data between paris and Copenhagen.
+
+```{r a test known as the Wicoxan two-sample test or the Mann-Whitney test to test equality of non-parametric data}
+
+wilcox.test(paris$overall_satisfaction, copenhagen$overall_satisfaction, paired=FALSE) 
+```
+
+#Here we see that in fact there is a differnece in satisfaction, even though the data are similar- note the slightly higher ratings in Copenhagen from the summary data.
+
+```{r a test known as the Wilcoxan two-sample test or the Mann-Whitney test to test equality of non-parametric data}
+
+wilcox.test(paris$overall_satisfaction, copenhagen$overall_satisfaction, paired=FALSE) 
+```
+
+#NOTE this code is easily converted for use in a paired sample comparison setting (e.g. comparing Likert Questionnaire ratings before-and-after an intervention) where 'paired=TRUE' is used.
+
+## Exercise 2.
+
+#(a) Test the following 2 hypotheses:
+
+#(1) The proportion of reviews received by paris properties is the same as that rec'd by c'hagen properties. 
+
+#(2) The proportion of reviews received by dublin properties is the same as that rec'd by london properties.
+
+#(b)If you had used a t-test rather than the 2-sample Wilcoxan test for these comparisons, would it have made a difference to the final result. Hint: perform the comparisons again using a t-test. A short one sentence answer is sufficient.
+
+
+```{r exercise 2}
+
+# check for equality of variances of the two price variables
+rest.ftestt <- var.test(copenhagen$overall_satisfaction, london$overall_satisfaction)
+rest.ftestt
+
+# first wilcox test
+wilcox.test(copenhagen$overall_satisfaction, london$overall_satisfaction, paired=FALSE) 
+
+# second wilcox test
+wilcox.test(copenhagen$overall_satisfaction, london$overall_satisfaction, paired=FALSE)
+
+# ggplot code for scatter plots of overall satisfaction vs number of reviews for copenhagen
+scatter_Chagen <- ggplot(copenhagen, aes(x = overall_satisfaction, y = reviews)) +
+    geom_point() +
+  xlab("Overall Satisfaction Ratings in Coopenhagen")
+
+# ggplot code for scatter plots of overall satisfaction vs number of reviews for london
+scatter_London <- ggplot(london, aes(x = overall_satisfaction, y = reviews)) +
+    geom_point() +
+   xlab("Overall Satisfaction Ratings in London")
+
+grid.arrange(scatter_Chagen, scatter_London, ncol=2)
+
+# summary for copenhagen and london satisfaction
+summary(copenhagen$overall_satisfaction)
+summary(london$overall_satisfaction)
+
+# ttest for false
+ttest_falsev_two <- t.test(copenhagen$overall_satisfaction, london$overall_satisfaction, var.equal = FALSE)
+ttest_falsev_two
+
+# ttest for true
+ttest_truev_two <- t.test(copenhagen$overall_satisfaction, london$overall_satisfaction, var.equal = TRUE)
+ttest_truev_two
+
+```
+
+
+## Comparing 3 or more groups.
+```{r boxplots for satisfaction}
+#box plots
+parissatbox <- ggplot(paris, aes(x=room_type, y=overall_satisfaction)) + 
+  geom_boxplot(outlier.colour="red", outlier.shape=1,
+                outlier.size=2) +
+ylab("Satisfaction rating-Paris")+
+  xlab("Room Type")
+
+copenhagensatbox <- ggplot(copenhagen, aes(x=room_type, y=overall_satisfaction)) + 
+  geom_boxplot(outlier.colour="blue", outlier.shape=1,
+                outlier.size=2) +
+ylab("Satisfaction rating-Chagen")+
+  xlab("Room Type")
+
+grid.arrange(parissatbox , copenhagensatbox , ncol=2)
+```
+
+#Here we are interested in whether there is a difference in the overall satisfaction rating according to room type.
+
+#we have 3 types of rooms, so we are no longer comparing just 2 groups. Hence we have to use a different statistic (cannot use Mann-Whitney nor t-tests as these are for 2 group comparisons only).
+
+#To perform a 3 group coamprison on these discrete data, we use a Kruskal-Wallis test, which is the non-parametric equivalent of an ANOVA test.
+
+```{r comparison of 3 groups using Kruskal-wallis test}
+kruskal.test(overall_satisfaction ~ room_type, data = paris)
+kruskal.test(overall_satisfaction ~ room_type, data = copenhagen)
+```
+
+#The Results here tell us that we should reject the null, i.e. there is a difference in satisfaction according to Room Type.
+
+#However we don't know which pairs are different, we know only that there is a difference among the 3 rooms.
+
+#We need to do whats called a post hoc test to see where the difference or differneces actually are (i.e. which groups differ?).
+
+
+```{r post-hoc tests using a p-value adjustment method}
+pairwise.wilcox.test(paris$overall_satisfaction, paris$room_type,
+                 p.adjust.method = "bonferroni")
+
+pairwise.wilcox.test(copenhagen$overall_satisfaction, copenhagen$room_type,
+                 p.adjust.method = "bonferroni")
+```
+
+#Here the results give us p-values for each paired comparison with an adjustment for multiple comparisons (Bonferroni was used in this case,there are others, e.g. try p.adjust.method ='BH' which performs the less conservative the Benjamini-Hochberg correction).
+
+#Note that the results differ between paris and c'hagen.
+
+#Note also that the results differ according to the p-value adjustment method, bonferroni is the most strict and is recommended when you have a small number of groups- the BH method may be better and is generally recommended when you are dealing with very large numbers of groups, i.e. 1000s in a big data analysis (also called large p).
+
+#if we had continuous data, we could run a one way ANOVA (Analysis of Variance Analysis).
+
+#we will look at this with the price data.
+
+#here our hypothesis is that there is no differnece in price according to type of room in Paris.
+
+```{r one way ANOVA on price-logged data- by room type}
+anova1 <- aov(logprice ~ room_type, data = paris)
+
+# Summary of the analysis and post hoc test with Tukey's HSD
+summary(anova1)
+TukeyHSD(anova1)
+```
+#The output here gives us a lot of information., on the first row, for room type we see a df of 2 (that means 3(groups)-1) and we see that we get an F-value and an assessment of how probable this F value is under the null, which gives us a p-value of 2x10-16).
+
+#this tells us clearly that we should reject the null, that there is a differnece in price by room type, but which rooms differ?
+
+#the post hoc test, this time using another method (Tukey's HSD) tells us that all 3 pairs are different in price (p values lower than 0.0001)
+
+#Note there are several assumptions which must be valid before doing an AVOVA.
+
+#1.The observations were obtained independently and randomly from the population defined by the factor levels or groups.
+
+#2.The data of each factor level (each group) are normally distributed.
+
+#3.These normal populations have equal variances (use Levene’s test for homogeneity of variance).
+
+#assumption 1 is tested the residual(errors) qq plots, assumption 2 using qq plots, and assumption 3 using a test called Levene's test.
+
+
+#..................................................................................................................................
+
+## Exercise 3. 
+
+#ANOVA assumptions 1 and 3 acan be tested using the code below. You will need to come up with code to test assumption 2.
+
+
+```{r testing assumptions for the anova on logprice data}
+
+#assumption 1 tested with residuals, are the residuals normally distributed?
+plot(anova1, 2)
+
+
+#assumption 2 tested with normal qq plots. Enter your code below:
+#install.packages("qqplotr")
+#library("qqplotr")
+#qqPlot(anova1)
+
+
+#assumption 3 tested with Levene's test for homogeneity of variances-tests whether the variances are equal or not.
+library(car) #this package is needed for Levene's test, which you should have already installed.
+leveneTest(logprice ~ room_type, paris)
+```
+
+#based on the results of these assumptions tests above can we conclude that an ANOVA was the appropriate test for this analysis of price by room type in Paris? 
+
+# Answer: Yes.
+
+#If no, then whcih tets should be performed?
+
+# Answer: Yes.
+
+
+
+## Exercise 4. 
+
+#Test the following six hypotheses, making sure to evaluate all test assumptions for each chosen test statistic.
+
+#1.The proportion of shared rooms is the same in Dublin and Copengaghen.
+
+#2.There is no difference in price according to room type in London.
+
+#3.The number of reviews do not differ according to room type in Dublin.
+
+#4.Overall satisfaction ratings do not differ between Dublin and Amsterdam. 
+
+#5.Overall price does not differ between Copehnagen, Dublin, Amsterdam, and Barcelona.
+
+#6.Overall satisfaction ratings do not differ between Paris, Warsaw, Amsterdam, and Iceland.
+
+# Question 4.1
+```{r Question 4.1}
+summary(dublin$room_type)
+summary(copenhagen$room_type)
+# 1
+prop.test(x = c(166, 97), n = c(7929,21301), alternative = "two.sided", correct = TRUE)
+```
+# Question 4.2
+```{r Question 4.2}
+summary(london$room_type)
+# 2
+anova2 <- aov(price ~ room_type, data = london)
+
+summary(anova2)
+TukeyHSD(anova2)
+```
+# Question 4.3
+```{r Question 4.3}
+summary(dublin$room_type)
+# 3
+anova3 <- aov(reviews ~ room_type, data = dublin)
+
+summary(anova3)
+TukeyHSD(anova3)
+```
+# Question 4.4
+```{r Question 4.4}
+summary(dublin$overall_satisfaction)
+summary(amsterdam$overall_satisfaction)
+# 4
+kruskal.test(overall_satisfaction ~ room_type, data = dublin)
+kruskal.test(overall_satisfaction ~ room_type, data = amsterdam)
+prop.test(x = c(3.099, 3.301), n = c(5,5), alternative = "two.sided", correct = TRUE)
+```
+# Question 4.5
+```{r Question 4.5}
+summary(copenhagen$price)
+summary(dublin$price)
+summary(amsterdam$price)
+summary(barcelona$price)
+# 5 
+priceNotDifferttest1 <- t.test(copenhagen$price, dublin$price, var.equal = TRUE)
+priceNotDifferttest1
+priceNotDifferttest2 <- t.test(dublin$price, amsterdam$price, var.equal = TRUE)
+priceNotDifferttest2
+priceNotDifferttest3 <- t.test(amsterdam$price, barcelona$price, var.equal = TRUE)
+priceNotDifferttest3
+
+```
+# Question 4.6
+```{r Question 4.6}
+summary(paris$overall_satisfaction)
+summary(warsaw$overall_satisfaction)
+summary(amsterdam$overall_satisfaction)
+summary(iceland$overall_satisfaction)
+# 6 
+satisNotDifferttest1 <- t.test(paris$overall_satisfaction, warsaw$overall_satisfaction, var.equal = TRUE)
+satisNotDifferttest1
+satisNotDifferttest2 <- t.test(warsaw$overall_satisfaction, amsterdam$overall_satisfaction, var.equal = TRUE)
+satisNotDifferttest2
+satisNotDifferttest3 <- t.test(amsterdam$overall_satisfaction, iceland$overall_satisfaction, var.equal = TRUE)
+satisNotDifferttest3
+```
+
+
+#........................................................................................................................................
+#........................................................................................................................................
+#........................................................................................................................................
+
+
+
+## Correlation and ls linear regression analysis.
+
+#we will work first on the protein-in-pregnancy data and on the US crime data that we saw in lectures.
+
+```{r load the protein.csv data}
+protein_preg<- read.csv("protein.csv", header=TRUE)
+protein_preg
+```
+
+
+#always start with boxplots
+```{r boxpots on protein and gestation}
+proteinbox <- ggplot(protein_preg, aes(x="", y=Protein)) + 
+  geom_boxplot(outlier.colour="red", outlier.shape=1,
+                outlier.size=2) +
+ylab("concentration in mg/mL")+
+  xlab("Protein in maternal blood")
+
+gestationbox <- ggplot(protein_preg, aes(x="", y=Gestation)) + 
+  geom_boxplot(outlier.colour="blue", outlier.shape=1,
+                outlier.size=2) +
+ylab("Week number")+
+  xlab("Gestation")
+
+grid.arrange(proteinbox , gestationbox , ncol=2)
+```
+
+#we always check the data using a scatter plot.
+```{r scatterplot of protein vs gestation week}
+scatter_protein <- ggplot(protein_preg, aes(x = Gestation, y = Protein)) +
+    geom_point() +
+  xlab("Gestation weeks") +
+  ylab("Protein mg/mL")
+scatter_protein
+```
+
+#here the data clearly suggest a positive linear relationship.
+
+#now we run a simple Peasron corrleation analysis.
+
+```{r run a simple pearson correlation for an r value}
+protein_preg %>%
+  summarize(N = n(), r = cor(Gestation, Protein))
+```
+
+#The results of also suggest a strong positive linear relationship (r=0.86) between the variables.
+
+#Now we run a simple least sqaures linear regression with an interest in modelling the relations between gestation week and protein concentration in mother's blood. 
+
+#Note the reponsse variable is protein concentration and it is modelled as the y variable.
+
+```{r linear regression model, predicting protein from gestation week}
+protein_model <- lm(formula= Protein ~ Gestation, data=protein_preg)
+summary(protein_model)
+```
+
+#a lot of information is provided in the output.
+
+#Key information is:
+
+#1.ModelR2 (adjusted) is 0.723.
+
+#2.F-statistic p-value is significant at 2.4 x 10-6.
+
+#3.Intercept estimate is 0.20174 and its t-value and associated p-value (p=0.027) indicate that it is different from 0.
+
+#4.Gestation estimate is 0.02284 and its t-value and associated p-value (p=2.4x10-6) indicate that it is different from 0.
+
+```{r scatterplot of protein vs gestation week with the calculated ls reg line added}
+scatter_protein2 <- ggplot(protein_preg, aes(x = Gestation, y = Protein)) +
+    geom_point() +
+   geom_smooth(method = "lm", se = FALSE) +  #adds ls regression line
+    xlab("Gestation (weeks)") +
+  ylab("Protein (mg/mL)")
+scatter_protein2
+```
+
+#......................................................................................................................................
+#......................................................................................................................................
+#......................................................................................................................................
+
+
+## Exercise 5.
+
+#Using some of the code above, create the following linear regression models from the crime.csv dataset.(some code is given to get you started)
+
+#1. Crime = Bo + B1(Dropout) + errors.
+
+#2. Crime = Bo + B1(Police) + errors.
+
+#3. Crime = Bo + B1(Prison) + errors.
+
+#4. Crime = Bo + B1(Poverty) + errors.
+
+
+#check the lecture slides for the precise meanings of these variables.
+
+#You should comment on these models outise the code chunks, base comments on the R2 values and the overall model's F-statistic associated p-value.
+
+#make sure to plot the data.
+
+#can you build an better predictive model based on a multiple linear regression model, i.e. one that explains more of the variation in crime rate than the single variable prediction models above?
+
+#e.g. Crime = Bo + B1(Dropout)+ B2(X2) + B3(X3)...
+
+#be sure to adhere to the key assumptions of multiple linear regression when choosing your model.
+
+
+
+```{r load the crime.csv data and name it}
+UScrime<- read.csv("crime.csv", header=TRUE)
+UScrime
+```
+
+```{r these functions create a useful correlation matrix- pearson r values- for the complete crime.csv dataset}
+
+UScrime_for_martix <- UScrime[, c(2,3,4,5,6)]
+head(UScrime_for_martix)
+
+cormatrix <- round(cor(UScrime_for_martix),2)
+head(cormatrix)
+```
+#1. Crime = Bo + B1(Dropout) + errors.
+```{r Exercise 5.1}
+UScrime %>%
+  summarize(N = n(), r = cor(Crime, Dropout))
+
+dropout_model <- lm(formula= Crime ~ Dropout, data=UScrime)
+summary(dropout_model)
+
+plot(dropout_model)
+qqPlot(dropout_model)
+
+dropoutgg <- ggplot(UScrime, aes(x = Dropout, y = Crime)) +
+    geom_point() +
+   geom_smooth(method = "lm", se = FALSE) +  #adds ls regression line
+    xlab("Dropout") +
+  ylab("Crime")
+dropoutgg
+```
+
+#2. Crime = Bo + B1(Police) + errors.
+```{r Exercise 5.2}
+UScrime %>%
+  summarize(N = n(), r = cor(Crime, Police))
+
+police_model <- lm(formula= Crime ~ Police, data=UScrime)
+summary(police_model)
+
+plot(police_model)
+qqPlot(police_model)
+
+policegg <- ggplot(UScrime, aes(x = Police, y = Crime)) +
+    geom_point() +
+   geom_smooth(method = "lm", se = FALSE) +  #adds ls regression line
+    xlab("Police") +
+  ylab("Crime")
+policegg
+```
+
+#3. Crime = Bo + B1(Prison) + errors.
+```{r Exercise 5.3}
+UScrime %>%
+  summarize(N = n(), r = cor(Crime, Prison))
+
+prison_model <- lm(formula= Crime ~ Prison, data=UScrime)
+summary(prison_model)
+
+plot(prison_model)
+qqPlot(prison_model)
+
+prisongg <- ggplot(UScrime, aes(x = Prison, y = Crime)) +
+    geom_point() +
+   geom_smooth(method = "lm", se = FALSE) +  #adds ls regression line
+    xlab("Prison") +
+  ylab("Crime")
+prisongg
+```
+
+#4. Crime = Bo + B1(Poverty) + errors.
+```{r Exercise 5.4}
+UScrime %>%
+  summarize(N = n(), r = cor(Crime, Poverty))
+
+poverty_model <- lm(formula= Crime ~ Poverty, data=UScrime)
+summary(poverty_model)
+
+plot(poverty_model)
+qqPlot(poverty_model)
+
+povertygg <- ggplot(UScrime, aes(x = Poverty, y = Crime)) +
+    geom_point() +
+   geom_smooth(method = "lm", se = FALSE) +  #adds ls regression line
+    xlab("Poverty") +
+  ylab("Crime")
+povertygg
+```
+
+#for extra marks, can you create a heat map figure based on this correlation matrix?
+
+#see: http://www.sthda.com/english/wiki/ggplot2-quick-correlation-matrix-heatmap-r-software-and-data-visualization
+
+
+
+
+
+
